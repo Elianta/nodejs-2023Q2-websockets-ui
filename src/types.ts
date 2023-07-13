@@ -13,3 +13,32 @@ export enum IncomingMessageType {
   Attack = 'attack',
   SinglePlay = 'single_play',
 }
+
+export type RegisterData = {
+  name: string;
+  password: string;
+};
+
+export interface ResponseMessage<T = any> {
+  type: ResponseMessageType;
+  data: T;
+  id: number;
+}
+
+export enum ResponseMessageType {
+  Register = 'reg',
+  UpdateRoom = 'update_room',
+  CreateGame = 'create_game',
+  StartGame = 'start_game',
+  PlayerTurn = 'turn',
+  Attack = 'attack',
+  FinishGame = 'finish',
+  UpdateWinners = 'update_winners',
+}
+
+export type RegisterResponseData = {
+  name: string;
+  index: number;
+  error: boolean;
+  errorText: string;
+};

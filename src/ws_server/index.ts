@@ -1,12 +1,21 @@
-import { WebSocketServer } from 'ws';
-import { parseString } from '../utils.js';
-import { IncomingMessage } from '../types.js';
+import { WebSocket, WebSocketServer } from 'ws';
+import { GameController } from '../GameController.js';
+import { createResponse, parseString } from '../utils.js';
+import {
+  IncomingMessage,
+  IncomingMessageType,
+  RegisterData,
+  RegisterResponseData,
+  ResponseMessageType,
+} from '../types.js';
 
 export class WSServer {
   private wss: WebSocketServer;
+  private gameController: GameController;
 
   constructor(port: number, listeningListener?: () => void) {
     this.wss = new WebSocketServer({ port }, listeningListener);
+    this.gameController = new GameController();
   }
 
   broadcast(message: string) {
@@ -26,11 +35,32 @@ export class WSServer {
         try {
           const message = parseString(data.toString()) as IncomingMessage;
           const messageType = message?.type ?? null;
-          console.log('Message type: ', messageType);
+
+          switch (messageType) {
+            case IncomingMessageType.Register: {
+              const { data } = message as IncomingMessage<RegisterData>;
+              this.handleRegister(ws, data);
+              return;
+            }
+
+            default:
+              break;
+          }
         } catch (error: any) {
           console.log(error?.message ?? error);
         }
       });
     });
+  }
+
+  handleRegister(ws: WebSocket, data: RegisterData) {
+    const { name, password } = data;
+    const registerResponseData = this.gameController.registerUser(name, password, ws);
+    const response = createResponse<RegisterResponseData>(
+      ResponseMessageType.Register,
+      registerResponseData,
+    );
+    console.log('Server response: ', response);
+    ws.send(response);
   }
 }
