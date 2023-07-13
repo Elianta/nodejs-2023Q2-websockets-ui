@@ -42,3 +42,10 @@ export type RegisterResponseData = {
   error: boolean;
   errorText: string;
 };
+
+export type UpdateRoomResponseData = AvailableRoom[];
+
+export type AvailableRoom = {
+  roomId: number;
+  roomUsers: Array<{ name: string; index: number }>;
+};

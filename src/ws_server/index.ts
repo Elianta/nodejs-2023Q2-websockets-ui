@@ -7,6 +7,7 @@ import {
   RegisterData,
   RegisterResponseData,
   ResponseMessageType,
+  UpdateRoomResponseData,
 } from '../types.js';
 
 export class WSServer {
@@ -40,6 +41,12 @@ export class WSServer {
             case IncomingMessageType.Register: {
               const { data } = message as IncomingMessage<RegisterData>;
               this.handleRegister(ws, data);
+              this.updateRooms();
+              return;
+            }
+
+            case IncomingMessageType.CreateRoom: {
+              this.handleCreateRoom(ws);
               return;
             }
 
@@ -62,5 +69,20 @@ export class WSServer {
     );
     console.log('Server response: ', response);
     ws.send(response);
+  }
+
+  handleCreateRoom(ws: WebSocket) {
+    this.gameController.createRoom(ws);
+    this.updateRooms();
+  }
+
+  updateRooms() {
+    const availableRooms = this.gameController.getAvailableRooms();
+    const roomsResponse = createResponse<UpdateRoomResponseData>(
+      ResponseMessageType.UpdateRoom,
+      availableRooms,
+    );
+    console.log('Server response: ', roomsResponse);
+    this.broadcast(roomsResponse);
   }
 }
