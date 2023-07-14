@@ -19,6 +19,10 @@ export type RegisterData = {
   password: string;
 };
 
+export type AddUserToRoomData = {
+  indexRoom: number;
+};
+
 export interface ResponseMessage<T = any> {
   type: ResponseMessageType;
   data: T;

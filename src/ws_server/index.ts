@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { GameController } from '../GameController.js';
 import { createResponse, parseString } from '../utils.js';
 import {
+  AddUserToRoomData,
   IncomingMessage,
   IncomingMessageType,
   RegisterData,
@@ -50,6 +51,12 @@ export class WSServer {
               return;
             }
 
+            case IncomingMessageType.AddUserToRoom: {
+              const { data } = message as IncomingMessage<AddUserToRoomData>;
+              this.handleAddUserToRoom(ws, data);
+              return;
+            }
+
             default:
               break;
           }
@@ -73,6 +80,13 @@ export class WSServer {
 
   handleCreateRoom(ws: WebSocket) {
     this.gameController.createRoom(ws);
+    this.updateRooms();
+  }
+
+  handleAddUserToRoom(ws: WebSocket, data: AddUserToRoomData) {
+    const { indexRoom } = data;
+
+    this.gameController.addUserToRoom(indexRoom, ws);
     this.updateRooms();
   }
 

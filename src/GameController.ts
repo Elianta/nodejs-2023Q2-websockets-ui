@@ -76,6 +76,38 @@ export class GameController {
       }));
   }
 
+  addUserToRoom(roomIndex: number, ws: WebSocket): void {
+    const foundRoom = this.rooms.find((room) => room.index === roomIndex);
+    const foundConnection = this.connections.find((connection) => connection.ws === ws);
+
+    if (!foundRoom) {
+      throw new Error('addUserToRoom error: room with specified index is not found');
+    }
+
+    const isUserAlreadyInside = foundRoom.connections.some((connection) => connection.ws === ws);
+    if (isUserAlreadyInside) {
+      throw new Error('addUserToRoom error: user is already inside');
+    }
+
+    if (!foundConnection) {
+      throw new Error('createRoom error: connection is not found');
+    }
+
+    foundRoom.connections.push(foundConnection);
+    // remove socket from other rooms
+    this.excludeBusySocketFromOtherRooms(ws, foundRoom.index);
+  }
+
+  excludeBusySocketFromOtherRooms(ws: WebSocket, busyRoomIndex: number) {
+    this.rooms = this.rooms.filter(
+      (room) =>
+        !(
+          room.connections.some((connection) => connection.ws === ws) &&
+          room.index !== busyRoomIndex
+        ),
+    );
+  }
+
   findRoomWithWs(ws: WebSocket): Room | null {
     return (
       this.rooms.find((room) => room.connections.some((connection) => connection.ws === ws)) ?? null
