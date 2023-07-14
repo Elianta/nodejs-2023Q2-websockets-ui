@@ -49,6 +49,11 @@ export type RegisterResponseData = {
 
 export type UpdateRoomResponseData = AvailableRoom[];
 
+export type CreateGameResponseData = {
+  idGame: number;
+  idPlayer: number;
+};
+
 export type AvailableRoom = {
   roomId: number;
   roomUsers: Array<{ name: string; index: number }>;

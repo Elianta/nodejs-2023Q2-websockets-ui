@@ -86,7 +86,7 @@ export class WSServer {
   handleAddUserToRoom(ws: WebSocket, data: AddUserToRoomData) {
     const { indexRoom } = data;
 
-    this.gameController.addUserToRoom(indexRoom, ws);
+    this.gameController.addUserToRoomAndCreateGame(indexRoom, ws);
     this.updateRooms();
   }
 

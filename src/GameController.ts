@@ -76,7 +76,7 @@ export class GameController {
       }));
   }
 
-  addUserToRoom(roomIndex: number, ws: WebSocket): void {
+  addUserToRoomAndCreateGame(roomIndex: number, ws: WebSocket): void {
     const foundRoom = this.rooms.find((room) => room.index === roomIndex);
     const foundConnection = this.connections.find((connection) => connection.ws === ws);
 
@@ -94,6 +94,7 @@ export class GameController {
     }
 
     foundRoom.connections.push(foundConnection);
+    foundRoom.createGame();
     // remove socket from other rooms
     this.excludeBusySocketFromOtherRooms(ws, foundRoom.index);
   }
