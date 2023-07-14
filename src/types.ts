@@ -23,6 +23,12 @@ export type AddUserToRoomData = {
   indexRoom: number;
 };
 
+export type AddShipsData = {
+  gameId: number;
+  ships: IShip[];
+  indexPlayer: number;
+};
+
 export interface ResponseMessage<T = any> {
   type: ResponseMessageType;
   data: T;
@@ -58,3 +64,22 @@ export type AvailableRoom = {
   roomId: number;
   roomUsers: Array<{ name: string; index: number }>;
 };
+
+export type Position = {
+  x: number;
+  y: number;
+};
+
+export enum ShipType {
+  Destroyer = 'small',
+  Submarine = 'medium',
+  Cruiser = 'large',
+  Battleship = 'huge',
+}
+
+export interface IShip {
+  position: Position;
+  direction: boolean;
+  length: number;
+  type: ShipType;
+}

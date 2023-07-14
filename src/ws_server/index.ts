@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { GameController } from '../GameController.js';
 import { createResponse, parseString } from '../utils.js';
 import {
+  AddShipsData,
   AddUserToRoomData,
   IncomingMessage,
   IncomingMessageType,
@@ -57,6 +58,12 @@ export class WSServer {
               return;
             }
 
+            case IncomingMessageType.AddShips: {
+              const { data } = message as IncomingMessage<AddShipsData>;
+              this.handleAddShips(data);
+              return;
+            }
+
             default:
               break;
           }
@@ -88,6 +95,11 @@ export class WSServer {
 
     this.gameController.addUserToRoomAndCreateGame(indexRoom, ws);
     this.updateRooms();
+  }
+
+  handleAddShips(data: AddShipsData) {
+    const { gameId, indexPlayer, ships } = data;
+    this.gameController.addShipsToGame(gameId, indexPlayer, ships);
   }
 
   updateRooms() {

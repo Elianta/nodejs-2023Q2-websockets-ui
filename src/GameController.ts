@@ -2,7 +2,7 @@ import { WebSocket } from 'ws';
 import { Connection } from './Connection.js';
 import { Room } from './Room.js';
 import { User } from './User.js';
-import { AvailableRoom, RegisterResponseData } from './types.js';
+import { AvailableRoom, IShip, RegisterResponseData } from './types.js';
 
 export class GameController {
   private users: User[] = [];
@@ -109,9 +109,22 @@ export class GameController {
     );
   }
 
+  addShipsToGame(gameIndex: number, userIndex: number, ships: IShip[]): void {
+    const foundRoom = this.findRoomWithGame(gameIndex);
+    if (!foundRoom) {
+      throw new Error('addShipsToGame error: room is not found');
+    }
+
+    foundRoom.addShipsForUser(userIndex, ships);
+  }
+
   findRoomWithWs(ws: WebSocket): Room | null {
     return (
       this.rooms.find((room) => room.connections.some((connection) => connection.ws === ws)) ?? null
     );
+  }
+
+  findRoomWithGame(gameIndex: number): Room | null {
+    return this.rooms.find((room) => room.game.index === gameIndex) ?? null;
   }
 }

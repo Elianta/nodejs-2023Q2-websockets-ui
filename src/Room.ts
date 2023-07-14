@@ -1,4 +1,4 @@
-import { CreateGameResponseData, ResponseMessageType } from './types.js';
+import { CreateGameResponseData, IShip, ResponseMessageType } from './types.js';
 import { Connection } from './Connection.js';
 import { Game } from './Game.js';
 import { createResponse } from './utils.js';
@@ -27,5 +27,9 @@ export class Room {
       ws.send(response);
     });
     return this.game;
+  }
+
+  addShipsForUser(userIndex: number, ships: IShip[]) {
+    this.game.setPlayerShips(userIndex, ships);
   }
 }
