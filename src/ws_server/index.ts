@@ -5,12 +5,14 @@ import {
   AddShipsData,
   AddUserToRoomData,
   AttackData,
+  FinishGameResponseData,
   IncomingMessage,
   IncomingMessageType,
   RegisterData,
   RegisterResponseData,
   ResponseMessageType,
   UpdateRoomResponseData,
+  UpdateWinnersResponseData,
 } from '../types.js';
 
 export class WSServer {
@@ -45,6 +47,7 @@ export class WSServer {
               const { data } = message as IncomingMessage<RegisterData>;
               this.handleRegister(ws, data);
               this.updateRooms();
+              this.updateWinners();
               return;
             }
 
@@ -110,11 +113,21 @@ export class WSServer {
     this.gameController.addShipsToGameAndStart(gameId, indexPlayer, ships);
   }
 
-  handleAttack(_ws: WebSocket, data: AttackData) {
+  handleAttack(ws: WebSocket, data: AttackData) {
     const { x, y, gameId, indexPlayer } = data;
     const position = typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
 
     this.gameController.handleAttack(gameId, indexPlayer, position);
+
+    const { isFinished } = this.gameController.checkIfGameFinished(gameId);
+    if (isFinished) {
+      const connections = this.gameController.getConnectionsByGameId(gameId);
+      const webSockets = connections.map(({ ws }) => ws);
+      this.finishGame(indexPlayer, webSockets);
+
+      this.updateWinners();
+      this.gameController.closeRoom(ws);
+    }
   }
 
   updateRooms() {
@@ -125,5 +138,25 @@ export class WSServer {
     );
     console.log('Server response: ', roomsResponse);
     this.broadcast(roomsResponse);
+  }
+
+  updateWinners() {
+    const winners = this.gameController.getWinners();
+    const winnersResponse = createResponse<UpdateWinnersResponseData>(
+      ResponseMessageType.UpdateWinners,
+      winners,
+    );
+    console.log('Server response: ', winners);
+    this.broadcast(winnersResponse);
+  }
+
+  finishGame(winnerIndex: number, webSockets: WebSocket[]) {
+    const response = createResponse<FinishGameResponseData>(ResponseMessageType.FinishGame, {
+      winPlayer: winnerIndex,
+    });
+    console.log('Server response: ', response);
+    webSockets.forEach((ws) => {
+      ws.send(response);
+    });
   }
 }

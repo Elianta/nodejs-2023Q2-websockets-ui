@@ -7,11 +7,13 @@ export type MatrixShip = {
   inGame: boolean;
   ship: Ship | null;
 };
+
 export class Game {
   private static index = 0;
   private currentPlayerIdx: number;
   index: number;
   shipsQuantity: number;
+  winnerIdx?: number;
   isStarted = false;
   isFinished = false;
   connectedPlayers = 0;
@@ -140,6 +142,7 @@ export class Game {
       attacks = [{ status: AttackStatus.Miss, position: target }];
     }
 
+    this.checkIfFinished();
     return attacks;
   }
 
@@ -174,5 +177,15 @@ export class Game {
     const enemyIdx = this.getEnemyIndex(this.currentPlayerIdx);
     const inGamePositions = this.getInGamePositions(enemyIdx);
     return inGamePositions.some((pos) => pos.x === position.x && pos.y === position.y);
+  }
+
+  checkIfFinished() {
+    for (const [playerIdx, killCount] of this.killCount.entries()) {
+      if (killCount >= this.shipsQuantity) {
+        this.isStarted = false;
+        this.winnerIdx = playerIdx;
+        this.isFinished = true;
+      }
+    }
   }
 }

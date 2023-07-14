@@ -2,12 +2,13 @@ import { WebSocket } from 'ws';
 import { Connection } from './Connection.js';
 import { Room } from './Room.js';
 import { User } from './User.js';
-import { AvailableRoom, IShip, Position, RegisterResponseData } from './types.js';
+import { AvailableRoom, IShip, IWinner, Position, RegisterResponseData } from './types.js';
 
 export class GameController {
   private users: User[] = [];
   private connections: Connection[] = [];
   private rooms: Room[] = [];
+  private winners: IWinner[] = [];
 
   registerUser(name: string, pass: string, ws: WebSocket): RegisterResponseData {
     const foundUser = this.users.find((user) => user.name === name);
@@ -35,6 +36,7 @@ export class GameController {
       const connection = new Connection(ws, user.index);
       this.users.push(user);
       this.connections.push(connection);
+      this.winners.push({ name, wins: 0 });
 
       return {
         name: user.name,
@@ -125,6 +127,42 @@ export class GameController {
     }
 
     foundRoom.handleAttack(userIndex, position);
+    this.updateWinners(gameIndex, userIndex);
+  }
+
+  updateWinners(gameIndex: number, userIndex: number): void {
+    const { isFinished } = this.checkIfGameFinished(gameIndex);
+    if (isFinished) {
+      this.addWinForUser(userIndex);
+    }
+  }
+
+  checkIfGameFinished(gameIndex: number): { isFinished: boolean } {
+    const room = this.findRoomWithGame(gameIndex);
+    if (!room) return { isFinished: false };
+
+    const isFinished = room.game.isFinished;
+    return { isFinished };
+  }
+
+  getWinners() {
+    return this.winners;
+  }
+
+  addWinForUser(userIndex: number) {
+    const foundUser = this.users.find((user) => user.index === userIndex);
+    if (foundUser) {
+      this.winners = this.winners
+        .map(({ name, wins }) => {
+          return name === foundUser.name ? { name, wins: wins + 1 } : { name, wins };
+        })
+        .sort((a, b) => b.wins - a.wins);
+    }
+  }
+
+  getConnectionsByGameId(gameIndex: number): Connection[] {
+    const foundRoom = this.rooms.find((room) => room.game.index === gameIndex);
+    return !!foundRoom ? foundRoom.connections : [];
   }
 
   findRoomWithWs(ws: WebSocket): Room | null {
@@ -135,5 +173,12 @@ export class GameController {
 
   findRoomWithGame(gameIndex: number): Room | null {
     return this.rooms.find((room) => room.game.index === gameIndex) ?? null;
+  }
+
+  closeRoom(ws: WebSocket) {
+    const foundRoom = this.findRoomWithWs(ws);
+    if (!!foundRoom) {
+      this.rooms = this.rooms.filter((room) => room.index !== foundRoom.index);
+    }
   }
 }

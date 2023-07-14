@@ -82,6 +82,12 @@ export type AttackResponseData = {
   status: AttackStatus;
 };
 
+export type FinishGameResponseData = {
+  winPlayer: number;
+};
+
+export type UpdateWinnersResponseData = IWinner[];
+
 export type AvailableRoom = {
   roomId: number;
   roomUsers: Array<{ name: string; index: number }>;
@@ -110,6 +116,11 @@ export enum AttackStatus {
   Miss = 'miss',
   Killed = 'killed',
   Shot = 'shot',
+}
+
+export interface IWinner {
+  name: string;
+  wins: number;
 }
 
 export type ShipDirection = 'vertical' | 'horizontal';
