@@ -32,9 +32,7 @@ export class WSServer {
     this.wss.on('connection', (ws) => {
       ws.on('error', console.error);
 
-      ws.on('close', () => {
-        console.log('Socket disconnect');
-      });
+      ws.on('close', this.handleClose.bind(this, ws));
 
       ws.on('message', (data) => {
         console.log('Client request', data.toString());
@@ -83,6 +81,23 @@ export class WSServer {
         }
       });
     });
+  }
+
+  handleClose(ws: WebSocket) {
+    try {
+      const { connections, winnerIdx } = this.gameController.handleDisconnect(ws);
+
+      if (winnerIdx && connections.length > 0) {
+        const webSockets = connections.map(({ ws }) => ws);
+        this.finishGame(winnerIdx, webSockets);
+      }
+
+      this.updateWinners();
+      this.gameController.closeRoom(ws);
+      this.gameController.clearConnections(ws);
+    } catch (error: any) {
+      console.log(error?.message ?? error);
+    }
   }
 
   handleRegister(ws: WebSocket, data: RegisterData) {

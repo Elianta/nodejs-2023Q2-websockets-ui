@@ -106,4 +106,8 @@ export class Room {
       });
     });
   }
+
+  disconnectUser(userIndex: number): void {
+    this.game.excludePlayerAndFinish(userIndex);
+  }
 }

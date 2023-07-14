@@ -188,4 +188,14 @@ export class Game {
       }
     }
   }
+
+  excludePlayerAndFinish(playerIdx: number) {
+    for (const player of this.killCount.keys()) {
+      if (player !== playerIdx) {
+        if (this.isStarted) this.winnerIdx = player;
+        this.isStarted = false;
+        this.isFinished = true;
+      }
+    }
+  }
 }

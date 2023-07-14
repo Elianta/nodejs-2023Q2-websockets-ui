@@ -160,6 +160,31 @@ export class GameController {
     }
   }
 
+  handleDisconnect(ws: WebSocket): { connections: Connection[]; winnerIdx: number | null } {
+    const foundRoom = this.findRoomWithWs(ws);
+
+    if (!foundRoom) {
+      throw new Error('handleDisconnect error: room is not found');
+    }
+
+    const foundConnection = foundRoom.connections.find(
+      (connection) => connection.ws === ws,
+    ) as Connection;
+
+    foundRoom.disconnectUser(foundConnection.userIndex);
+    this.updateWinners(foundRoom.game.index, foundConnection.userIndex);
+    const roomConnections = foundRoom.connections.filter((connection) => connection.ws !== ws);
+
+    return {
+      connections: roomConnections,
+      winnerIdx: foundRoom.game.winnerIdx ?? null,
+    };
+  }
+
+  clearConnections(...wsockets: WebSocket[]): void {
+    this.connections = this.connections.filter((connection) => !wsockets.includes(connection.ws));
+  }
+
   getConnectionsByGameId(gameIndex: number): Connection[] {
     const foundRoom = this.rooms.find((room) => room.game.index === gameIndex);
     return !!foundRoom ? foundRoom.connections : [];
