@@ -99,7 +99,7 @@ export class WSServer {
 
   handleAddShips(data: AddShipsData) {
     const { gameId, indexPlayer, ships } = data;
-    this.gameController.addShipsToGame(gameId, indexPlayer, ships);
+    this.gameController.addShipsToGameAndStart(gameId, indexPlayer, ships);
   }
 
   updateRooms() {

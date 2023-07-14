@@ -109,13 +109,13 @@ export class GameController {
     );
   }
 
-  addShipsToGame(gameIndex: number, userIndex: number, ships: IShip[]): void {
+  addShipsToGameAndStart(gameIndex: number, userIndex: number, ships: IShip[]): void {
     const foundRoom = this.findRoomWithGame(gameIndex);
     if (!foundRoom) {
       throw new Error('addShipsToGame error: room is not found');
     }
 
-    foundRoom.addShipsForUser(userIndex, ships);
+    foundRoom.addShipsForUserAndStart(userIndex, ships);
   }
 
   findRoomWithWs(ws: WebSocket): Room | null {

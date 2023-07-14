@@ -60,6 +60,15 @@ export type CreateGameResponseData = {
   idPlayer: number;
 };
 
+export type StartGameResponseData = {
+  ships: IShip[];
+  currentPlayerIndex: number;
+};
+
+export type PlayerTurnResponseData = {
+  currentPlayer: number;
+};
+
 export type AvailableRoom = {
   roomId: number;
   roomUsers: Array<{ name: string; index: number }>;
@@ -83,3 +92,5 @@ export interface IShip {
   length: number;
   type: ShipType;
 }
+
+export type ShipDirection = 'vertical' | 'horizontal';
