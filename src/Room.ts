@@ -1,7 +1,10 @@
 import {
+  AttackResponseData,
+  AttackStatus,
   CreateGameResponseData,
   IShip,
   PlayerTurnResponseData,
+  Position,
   ResponseMessageType,
   StartGameResponseData,
 } from './types.js';
@@ -66,6 +69,41 @@ export class Room {
       const response = createResponse(ResponseMessageType.PlayerTurn, playerTurnResponseData);
       console.log('Server response: ', response);
       ws.send(response);
+    });
+  }
+
+  handleAttack(userIndex: number, position: Position | null): void {
+    const currentPlayerIndex = this.game.getCurrentPlayer();
+    if (userIndex !== currentPlayerIndex) {
+      console.log('handleAttack error: player is out of turn');
+      return;
+    }
+
+    try {
+      const attacks = this.game.handleAttack(position);
+      this.sendAttackSignal(currentPlayerIndex, attacks);
+    } catch (error: any) {
+      console.log(`handleAttack error: ${error?.message}`);
+    } finally {
+      this.sendPlayerTurnSignal();
+    }
+  }
+
+  sendAttackSignal(
+    playerIdx: number,
+    attacks: Array<{ position: Position; status: AttackStatus }>,
+  ) {
+    this.connections.forEach(({ ws }) => {
+      attacks.forEach((attack) => {
+        const attackResponseData: AttackResponseData = {
+          currentPlayer: playerIdx,
+          position: attack.position,
+          status: attack.status,
+        };
+        const response = createResponse(ResponseMessageType.Attack, attackResponseData);
+        console.log('Server response: ', response);
+        ws.send(response);
+      });
     });
   }
 }

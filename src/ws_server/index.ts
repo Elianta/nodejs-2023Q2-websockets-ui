@@ -4,6 +4,7 @@ import { createResponse, parseString } from '../utils.js';
 import {
   AddShipsData,
   AddUserToRoomData,
+  AttackData,
   IncomingMessage,
   IncomingMessageType,
   RegisterData,
@@ -64,6 +65,13 @@ export class WSServer {
               return;
             }
 
+            case IncomingMessageType.Attack:
+            case IncomingMessageType.RandomAttack: {
+              const { data } = message as IncomingMessage<AttackData>;
+              this.handleAttack(ws, data);
+              return;
+            }
+
             default:
               break;
           }
@@ -100,6 +108,13 @@ export class WSServer {
   handleAddShips(data: AddShipsData) {
     const { gameId, indexPlayer, ships } = data;
     this.gameController.addShipsToGameAndStart(gameId, indexPlayer, ships);
+  }
+
+  handleAttack(_ws: WebSocket, data: AttackData) {
+    const { x, y, gameId, indexPlayer } = data;
+    const position = typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
+
+    this.gameController.handleAttack(gameId, indexPlayer, position);
   }
 
   updateRooms() {

@@ -1,5 +1,5 @@
 import { getRandomFromList } from './utils.js';
-import { IShip } from './types.js';
+import { AttackStatus, IShip, Position } from './types.js';
 import { Ship } from './Ship.js';
 
 export type MatrixShip = {
@@ -42,7 +42,6 @@ export class Game {
     this.shipsQuantity = ships.length;
     this.rowShips.set(playerIdx, ships);
     this.connectedPlayers++;
-    console.log(`Ships of player #: ${playerIdx}`, this.rowShips.get(playerIdx));
   }
 
   start() {
@@ -58,6 +57,11 @@ export class Game {
     this.generateShipsMatrix();
 
     this.isStarted = true;
+  }
+
+  addKillForPlayer(playerIdx: number) {
+    const prevCount = this.killCount.get(playerIdx) as number;
+    this.killCount.set(playerIdx, prevCount + 1);
   }
 
   generateShipsForAllPlayers() {
@@ -96,5 +100,79 @@ export class Game {
 
       this._shipsMatrix.set(playerIdx, matrix);
     }
+  }
+
+  getEnemyIndex(playerIdx: number): number {
+    return [...this._shipsMatrix.keys()].find((idx) => idx !== playerIdx) as number;
+  }
+
+  handleAttack(position: Position | null): Array<{ status: AttackStatus; position: Position }> {
+    const enemyIdx = this.getEnemyIndex(this.currentPlayerIdx);
+    const target = position || this.getRandomTarget();
+
+    if (!this.attackIsAllowed(target)) {
+      throw new Error('attack is not allowed');
+    }
+
+    const { x, y } = target;
+    const matrix = this._shipsMatrix.get(enemyIdx) as MatrixShip[][];
+    const matrixCell = matrix?.[x]?.[y] as MatrixShip;
+    let attacks: Array<{ status: AttackStatus; position: Position }> = [];
+
+    if (matrixCell.isShip && !!matrixCell.ship) {
+      const isKilled = matrixCell.ship.shot();
+      if (isKilled) {
+        const seaPositions = matrixCell.ship.seaPositions;
+        const partsPositions = matrixCell.ship.partsPositions;
+        this.revalidateInGameCells(matrix, target, ...seaPositions);
+        this.addKillForPlayer(this.currentPlayerIdx);
+        attacks = [
+          ...partsPositions.map((position) => ({ status: AttackStatus.Killed, position })),
+          ...seaPositions.map((position) => ({ status: AttackStatus.Miss, position })),
+        ];
+      } else {
+        this.revalidateInGameCells(matrix, target);
+        attacks = [{ status: AttackStatus.Shot, position: target }];
+      }
+    } else {
+      this.revalidateInGameCells(matrix, target);
+      this.setCurrentPlayer(enemyIdx);
+      attacks = [{ status: AttackStatus.Miss, position: target }];
+    }
+
+    return attacks;
+  }
+
+  revalidateInGameCells(matrix: MatrixShip[][], ...positionsToExclude: Position[]) {
+    positionsToExclude.forEach(({ x, y }) => {
+      const matrixCell = matrix?.[x]?.[y] as MatrixShip;
+      if (!!matrixCell) {
+        matrixCell.inGame = false;
+      }
+    });
+  }
+
+  getInGamePositions(playerIdx: number): Position[] {
+    const matrix = this._shipsMatrix.get(playerIdx) as MatrixShip[][];
+    const inGamePositions: Position[] = matrix.reduce((acc, currentRow, rowIdx) => {
+      currentRow.forEach((col, colIdx) => {
+        if (col.inGame) acc.push({ x: rowIdx, y: colIdx });
+      });
+      return acc;
+    }, [] as Position[]);
+    return inGamePositions;
+  }
+
+  getRandomTarget(): Position {
+    const enemyIdx = this.getEnemyIndex(this.currentPlayerIdx);
+    const inGamePositions = this.getInGamePositions(enemyIdx);
+    const randomPosition = getRandomFromList(inGamePositions);
+    return randomPosition;
+  }
+
+  attackIsAllowed(position: Position): boolean {
+    const enemyIdx = this.getEnemyIndex(this.currentPlayerIdx);
+    const inGamePositions = this.getInGamePositions(enemyIdx);
+    return inGamePositions.some((pos) => pos.x === position.x && pos.y === position.y);
   }
 }

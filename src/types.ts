@@ -29,6 +29,13 @@ export type AddShipsData = {
   indexPlayer: number;
 };
 
+export type AttackData = {
+  gameId: number;
+  indexPlayer: number;
+  x?: number;
+  y?: number;
+};
+
 export interface ResponseMessage<T = any> {
   type: ResponseMessageType;
   data: T;
@@ -69,6 +76,12 @@ export type PlayerTurnResponseData = {
   currentPlayer: number;
 };
 
+export type AttackResponseData = {
+  position: Position;
+  currentPlayer: number;
+  status: AttackStatus;
+};
+
 export type AvailableRoom = {
   roomId: number;
   roomUsers: Array<{ name: string; index: number }>;
@@ -91,6 +104,12 @@ export interface IShip {
   direction: boolean;
   length: number;
   type: ShipType;
+}
+
+export enum AttackStatus {
+  Miss = 'miss',
+  Killed = 'killed',
+  Shot = 'shot',
 }
 
 export type ShipDirection = 'vertical' | 'horizontal';

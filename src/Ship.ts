@@ -28,6 +28,12 @@ export class Ship {
     this.calcPositions(startX, startY, direction);
   }
 
+  shot(): boolean {
+    this.shots++;
+    this.isKilled = this.shots >= this.size;
+    return this.isKilled;
+  }
+
   isValidPos(pos: Position) {
     return pos.x >= 0 && pos.x <= this.gridSize - 1 && pos.y >= 0 && pos.y <= this.gridSize - 1;
   }
