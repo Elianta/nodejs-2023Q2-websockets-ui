@@ -5,7 +5,6 @@ import {
   AddShipsData,
   AddUserToRoomData,
   AttackData,
-  FinishGameResponseData,
   IncomingMessage,
   IncomingMessageType,
   RegisterData,
@@ -49,6 +48,11 @@ export class WSServer {
               return;
             }
 
+            case IncomingMessageType.SinglePlay: {
+              this.handleSinglePlay(ws);
+              return;
+            }
+
             case IncomingMessageType.CreateRoom: {
               this.handleCreateRoom(ws);
               return;
@@ -85,13 +89,7 @@ export class WSServer {
 
   handleClose(ws: WebSocket) {
     try {
-      const { connections, winnerIdx } = this.gameController.handleDisconnect(ws);
-
-      if (winnerIdx && connections.length > 0) {
-        const webSockets = connections.map(({ ws }) => ws);
-        this.finishGame(winnerIdx, webSockets);
-      }
-
+      this.gameController.handleDisconnect(ws);
       this.updateWinners();
       this.gameController.closeRoom(ws);
       this.gameController.clearConnections(ws);
@@ -109,6 +107,11 @@ export class WSServer {
     );
     console.log('Server response: ', response);
     ws.send(response);
+  }
+
+  handleSinglePlay(ws: WebSocket) {
+    const room = this.gameController.createRoom(ws, true);
+    this.gameController.createGameWithBot(room.index, ws);
   }
 
   handleCreateRoom(ws: WebSocket) {
@@ -132,17 +135,11 @@ export class WSServer {
     const { x, y, gameId, indexPlayer } = data;
     const position = typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
 
-    this.gameController.handleAttack(gameId, indexPlayer, position);
-
-    const { isFinished } = this.gameController.checkIfGameFinished(gameId);
-    if (isFinished) {
-      const connections = this.gameController.getConnectionsByGameId(gameId);
-      const webSockets = connections.map(({ ws }) => ws);
-      this.finishGame(indexPlayer, webSockets);
-
+    const onGameFinish = () => {
       this.updateWinners();
       this.gameController.closeRoom(ws);
-    }
+    };
+    this.gameController.handleAttack(gameId, indexPlayer, position, onGameFinish);
   }
 
   updateRooms() {
@@ -163,15 +160,5 @@ export class WSServer {
     );
     console.log('Server response: ', winners);
     this.broadcast(winnersResponse);
-  }
-
-  finishGame(winnerIndex: number, webSockets: WebSocket[]) {
-    const response = createResponse<FinishGameResponseData>(ResponseMessageType.FinishGame, {
-      winPlayer: winnerIndex,
-    });
-    console.log('Server response: ', response);
-    webSockets.forEach((ws) => {
-      ws.send(response);
-    });
   }
 }

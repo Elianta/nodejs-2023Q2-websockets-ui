@@ -1,11 +1,13 @@
 import { getRandomFromList } from './utils.js';
 import { AttackStatus, IShip, Position } from './types.js';
 import { Ship } from './Ship.js';
+import { Bot } from './Bot.js';
 
 export type MatrixShip = {
   isShip: boolean;
   inGame: boolean;
   ship: Ship | null;
+  isSea: boolean;
 };
 
 export class Game {
@@ -14,6 +16,8 @@ export class Game {
   index: number;
   shipsQuantity: number;
   winnerIdx?: number;
+  withBot: boolean;
+  bot: Bot | null = null;
   isStarted = false;
   isFinished = false;
   connectedPlayers = 0;
@@ -24,12 +28,18 @@ export class Game {
   private _ships = new Map<number, Ship[]>();
   private _shipsMatrix = new Map<number, MatrixShip[][]>();
 
-  constructor() {
+  constructor(withBot: boolean = false) {
+    this.withBot = withBot;
     this.index = ++Game.index;
+    if (withBot) this.bot = new Bot(this.gridSize);
   }
 
   canBeStarted(): boolean {
-    return this.connectedPlayers === this.maxPlayers;
+    if (this.withBot) {
+      return this.connectedPlayers === 1;
+    } else {
+      return this.connectedPlayers === this.maxPlayers;
+    }
   }
 
   setCurrentPlayer(index: number) {
@@ -47,7 +57,7 @@ export class Game {
   }
 
   start() {
-    const players = [...this.rowShips.keys()];
+    const players = [...this.rowShips.keys()].concat(this.bot?.index ?? []);
     const randomPlayer = getRandomFromList(players);
 
     players.forEach((player) => {
@@ -67,6 +77,10 @@ export class Game {
   }
 
   generateShipsForAllPlayers() {
+    if (this.withBot && !!this.bot) {
+      this._ships.set(this.bot.index, this.bot.getShips());
+    }
+
     for (const [playerIdx, shipsData] of this.rowShips) {
       const ships = shipsData.map((data) => {
         const size = data.length;
@@ -96,6 +110,7 @@ export class Game {
             inGame: true,
             isShip: !!shipFound,
             ship: shipFound ?? null,
+            isSea: !shipFound,
           };
         }
       }

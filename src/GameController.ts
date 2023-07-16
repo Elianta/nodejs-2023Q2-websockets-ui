@@ -1,4 +1,5 @@
 import { WebSocket } from 'ws';
+import { Game } from './Game.js';
 import { Connection } from './Connection.js';
 import { Room } from './Room.js';
 import { User } from './User.js';
@@ -47,7 +48,7 @@ export class GameController {
     }
   }
 
-  createRoom(ws: WebSocket): Room {
+  createRoom(ws: WebSocket, withBot: boolean = false): Room {
     const foundRoom = this.findRoomWithWs(ws);
     const foundConnection = this.connections.find((connection) => connection.ws === ws);
 
@@ -58,14 +59,14 @@ export class GameController {
       throw new Error('createRoom error: connection is not found');
     }
 
-    const room = new Room(foundConnection);
+    const room = new Room(foundConnection, withBot);
     this.rooms.push(room);
     return room;
   }
 
   getAvailableRooms(): AvailableRoom[] {
     return this.rooms
-      .filter((room) => room.connections.length <= 1)
+      .filter((room) => room.connections.length <= 1 && !room.withBot)
       .map((room) => ({
         roomId: room.index,
         roomUsers: room.connections.map((connection) => {
@@ -101,6 +102,21 @@ export class GameController {
     this.excludeBusySocketFromOtherRooms(ws, foundRoom.index);
   }
 
+  createGameWithBot(roomIndex: number, ws: WebSocket): Game {
+    const foundRoom = this.rooms.find(
+      (room) =>
+        room.index === roomIndex && room.connections.some((connection) => connection.ws === ws),
+    );
+    if (!foundRoom) {
+      throw new Error('createGameWithBot error: room with specified index is not found');
+    }
+
+    const game = foundRoom.createGame();
+    // remove socket from other rooms
+    this.excludeBusySocketFromOtherRooms(ws, foundRoom.index);
+    return game;
+  }
+
   excludeBusySocketFromOtherRooms(ws: WebSocket, busyRoomIndex: number) {
     this.rooms = this.rooms.filter(
       (room) =>
@@ -120,29 +136,22 @@ export class GameController {
     foundRoom.addShipsForUserAndStart(userIndex, ships);
   }
 
-  handleAttack(gameIndex: number, userIndex: number, position: Position | null): void {
+  handleAttack(
+    gameIndex: number,
+    userIndex: number,
+    position: Position | null,
+    onGameFinish: () => void,
+  ): void {
     const foundRoom = this.rooms.find((room) => room.game.index === gameIndex);
     if (!foundRoom) {
       throw new Error('handleAttack error: room is not found');
     }
 
-    foundRoom.handleAttack(userIndex, position);
-    this.updateWinners(gameIndex, userIndex);
-  }
-
-  updateWinners(gameIndex: number, userIndex: number): void {
-    const { isFinished } = this.checkIfGameFinished(gameIndex);
-    if (isFinished) {
-      this.addWinForUser(userIndex);
-    }
-  }
-
-  checkIfGameFinished(gameIndex: number): { isFinished: boolean } {
-    const room = this.findRoomWithGame(gameIndex);
-    if (!room) return { isFinished: false };
-
-    const isFinished = room.game.isFinished;
-    return { isFinished };
+    const onFinish = (winnerIndex: number, botWin: boolean): void => {
+      if (!botWin) this.addWinForUser(winnerIndex);
+      onGameFinish();
+    };
+    foundRoom.handleAttack(userIndex, position, onFinish);
   }
 
   getWinners() {
@@ -160,7 +169,7 @@ export class GameController {
     }
   }
 
-  handleDisconnect(ws: WebSocket): { connections: Connection[]; winnerIdx: number | null } {
+  handleDisconnect(ws: WebSocket): void {
     const foundRoom = this.findRoomWithWs(ws);
 
     if (!foundRoom) {
@@ -172,22 +181,10 @@ export class GameController {
     ) as Connection;
 
     foundRoom.disconnectUser(foundConnection.userIndex);
-    this.updateWinners(foundRoom.game.index, foundConnection.userIndex);
-    const roomConnections = foundRoom.connections.filter((connection) => connection.ws !== ws);
-
-    return {
-      connections: roomConnections,
-      winnerIdx: foundRoom.game.winnerIdx ?? null,
-    };
   }
 
   clearConnections(...wsockets: WebSocket[]): void {
     this.connections = this.connections.filter((connection) => !wsockets.includes(connection.ws));
-  }
-
-  getConnectionsByGameId(gameIndex: number): Connection[] {
-    const foundRoom = this.rooms.find((room) => room.game.index === gameIndex);
-    return !!foundRoom ? foundRoom.connections : [];
   }
 
   findRoomWithWs(ws: WebSocket): Room | null {
