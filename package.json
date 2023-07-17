@@ -1,21 +1,35 @@
 {
-    "name": "ws_task",
-    "version": "1.0.0",
-    "description": "Template for the WebSocket remote control task",
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-        "start": "node ./index.js",
-        "start:dev": "nodemon ./index.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "Andrei Auchynnikau",
-    "keywords": [],
-    "license": "ISC",
-    "devDependencies": {
-        "nodemon": "^2.0.16"
-    },
-    "dependencies": {
-        "ws": "^8.8.0"
-    }
+  "name": "websockets-ui",
+  "version": "1.0.0",
+  "description": "Implementation of battleship game backend using websocket",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsc && node ./dist/index.js",
+    "start:dev": "nodemon ./src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elianta/nodejs-2023Q2-websockets-ui.git"
+  },
+  "author": "Elianta",
+  "keywords": [],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Elianta/nodejs-2023Q2-websockets-ui/issues"
+  },
+  "homepage": "https://github.com/Elianta/nodejs-2023Q2-websockets-ui#readme",
+  "devDependencies": {
+    "@types/node": "^20.4.0",
+    "@types/ws": "^8.5.5",
+    "dotenv": "^16.3.1",
+    "nodemon": "^2.0.16",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "ws": "^8.8.0"
+  }
 }
