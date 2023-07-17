@@ -24,11 +24,10 @@ export class Room {
     this.withBot = withBot;
     this.connections = [connection];
     this.index = ++Room.index;
+    this.game = new Game(this.withBot);
   }
 
   createGame(): Game {
-    this.game = new Game(this.withBot);
-
     this.connections.forEach(({ ws, userIndex }) => {
       const createGameResponseData: CreateGameResponseData = {
         idGame: this.game.index,
@@ -168,7 +167,9 @@ export class Room {
   }
 
   disconnectUser(userIndex: number): void {
-    this.game.excludePlayerAndFinish(userIndex);
-    this.sendFinishSignal(this.game.winnerIdx!);
+    if (this.game.isStarted) {
+      this.game.excludePlayerAndFinish(userIndex);
+      this.sendFinishSignal(this.game.winnerIdx!);
+    }
   }
 }

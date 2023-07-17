@@ -93,6 +93,7 @@ export class WSServer {
       this.updateWinners();
       this.gameController.closeRoom(ws);
       this.gameController.clearConnections(ws);
+      this.updateRooms();
     } catch (error: any) {
       console.log(error?.message ?? error);
     }
